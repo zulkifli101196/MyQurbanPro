@@ -33,13 +33,12 @@
     .card-welcome { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); border-radius: 24px; color: white; border: none; }
     .quote-box { background: #1e293b; color: white; border-radius: 20px; padding: 25px; position: relative; overflow: hidden; }
     .quote-box i { position: absolute; opacity: 0.1; font-size: 4rem; top: 10px; left: 10px; }
-    #login-page { position: fixed; inset: 0; z-index: 9999; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+    #login-page { position: fixed; top: 0;left: 0;width: 100vw;height: 100vh;z-index: 99999; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
     .table-container { background: white; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; }
     table.dataTable { width: 100% !important; margin: 15px 0 !important; border-collapse: collapse !important; }
     table.dataTable thead th { background: #f8fafc; color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; padding: 15px !important; border-bottom: 1px solid #e2e8f0 !important; white-space: nowrap; }
     table.dataTable tbody td { padding: 12px 15px !important; vertical-align: middle; border-bottom: 1px solid #f1f5f9 !important; white-space: nowrap; font-size: 13.5px; }
     #reader { border-radius: 15px; overflow: hidden; background: #000; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    
     @media print { 
       body * { visibility: hidden; } 
       #print-area, #print-area * { visibility: visible; } 
@@ -209,7 +208,6 @@
           </div>
         </div>
       </div>
-      
       <div id="print-area" class="d-none"></div>
     </div>
   </div>
@@ -227,7 +225,7 @@
   <div class="modal fade" id="modalQR" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 350px;">
       <div class="modal-content text-center p-3 border-0 rounded-4">
-        <div id="qr-preview-content" class="d-flex justify-content-center"></div>
+        <div id="qr-preview-content"></div>
         <button class="btn btn-dark mt-3 w-100 py-2 rounded-pill" onclick="printSingleKupon()"><i class="fas fa-print me-2"></i>Cetak Sekarang</button>
       </div>
     </div>
@@ -239,7 +237,8 @@
   <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwsjM75MfQ4iUTM1eecJHBiRWUpYFkk5-vsAg2fW2_6rHdsuPiVKRyETXAUR7weczEtLg/exec";
+    // === GANTI DENGAN URL WEB APP GOOGLE ANDA ===
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzoxaN3gePG6_74T8hD_Oxq0a75DK7aNN5vgFUH51rQbg1SmtevHb1yHcRFy7klaD5K8Q/exec";
 
     let SESSION = {}; let REFS = {}; let CUR_SHEET = ""; let CUR_ID = null; let dTable = null; let RAW_DATA = [];
     let html5QrCode;
@@ -342,10 +341,10 @@
 
     function generateKuponHTML(kode, jenis, lokasi) {
       return `
-        <div class="kupon-card" style="width: 170px; background: white; border-radius: 12px; overflow: hidden; border: 2px solid #2563eb; text-align: center; position: relative; font-family: 'Plus Jakarta Sans', sans-serif; margin: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div class="kupon-card" style="width: 170px; background: white; border-radius: 12px; overflow: hidden; border: 2px solid #2563eb; text-align: center; position: relative; font-family: 'Plus Jakarta Sans', sans-serif;">
           <div style="background: #2563eb; color: white; padding: 6px 5px; font-size: 9px; font-weight: 800; letter-spacing: 1px;">Kupon Daging Qurban</div>
           <div style="padding: 12px 8px;">
-            <img src="https://api.quickchart.io/qr?text=${encodeURIComponent(kode)}&size=130&margin=1" style="width: 130px; height: 130px; margin-bottom: 8px; border: 1px solid #f1f5f9; padding: 5px; border-radius: 8px;">
+            <img src="https://quickchart.io/qr?text=${kode}&size=150&margin=1" style="width: 130px; height: 130px; margin-bottom: 8px; border: 1px solid #f1f5f9; padding: 5px; border-radius: 8px;">
             <div style="font-weight: 900; font-size: 14px; color: #1e293b; margin-bottom: 2px;">${kode}</div>
             <div style="font-size: 10px; color: #ffffff; background: #1e293b; display: inline-block; padding: 2px 12px; border-radius: 50px; margin-bottom: 6px; font-weight: 600;">${jenis}</div>
             <div style="border-top: 1px dashed #e2e8f0; margin: 8px 5px 0 5px; padding-top: 6px;">
@@ -386,34 +385,20 @@
         if(["No", "Timestamp", "QRCode_Kupon"].includes(h)) return;
         let val = id ? row[i] : "";
         htm += `<div class="col-md-6 mb-3"><label class="small fw-bold mb-1">${h}</label>`;
-        if(REFS[h]) {
-          htm += `<select class="form-select" data-col="${h}">`;
-          REFS[h].forEach(o => {
-            htm += `<option value="${o}" ${o==val?'selected':''}>${o}</option>`;
-          });
-          htm += `</select>`;
-        } else {
-          htm += `<input type="text" class="form-control" data-col="${h}" value="${val}">`;
-        }
+        if(REFS[h]) htm += `<select class="form-select" data-col="${h}">${REFS[h].map(o => `<option value="${o}" ${o==val?'selected':''}>${o}</option>`).join('')}</select>`;
+        else htm += `<input type="text" class="form-control" data-col="${h}" value="${val}">`;
         htm += `</div>`;
       });
       $('#form-body').html(htm + '</div>'); bsModal.show();
     }
 
-    function saveData() { 
-      const obj = {}; 
-      $('[data-col]').each(function() { obj[$(this).data('col')] = $(this).val(); }); 
-      call('manageData', "save", CUR_SHEET, obj, CUR_ID).then(() => { bsModal.hide(); loadCRUD(CUR_SHEET); loadStats(); }); 
-    }
-    
+    function saveData() { const obj = {}; $('[data-col]').each(function() { obj[$(this).data('col')] = $(this).val(); }); call('manageData', "save", CUR_SHEET, obj, CUR_ID).then(() => { bsModal.hide(); loadCRUD(CUR_SHEET); loadStats(); }); }
     function delData(id) { Swal.fire({title: 'Hapus?', icon: 'warning', showCancelButton: true}).then(r => { if(r.isConfirmed) call('manageData', "delete", CUR_SHEET, null, id).then(() => { loadCRUD(CUR_SHEET); loadStats(); }); }); }
 
     function bulkKupon() {
       Swal.fire({
         title: 'Bulk Generate',
-        html: `<input id="q-qty" type="number" class="form-control mb-2" placeholder="Jumlah" min="1" value="10">
-               <select id="q-jenis" class="form-select mb-2">${REFS['Jenis_Kupon']?REFS['Jenis_Kupon'].map(x=>`<option>${x}</option>`):'<option>Umum</option>'}</select>
-               <select id="q-lok" class="form-select">${REFS['Lokasi_Pengambilan']?REFS['Lokasi_Pengambilan'].map(x=>`<option>${x}</option>`):'<option>Masjid</option>'}</select>`,
+        html: `<input id="q-qty" type="number" class="form-control mb-2" placeholder="Jumlah"><select id="q-jenis" class="form-select mb-2">${REFS['Jenis_Kupon']?REFS['Jenis_Kupon'].map(x=>`<option>${x}</option>`):'<option>Umum</option>'}</select><select id="q-lok" class="form-select">${REFS['Lokasi_Pengambilan']?REFS['Lokasi_Pengambilan'].map(x=>`<option>${x}</option>`):'<option>Masjid</option>'}</select>`,
         showCancelButton: true
       }).then(r => { if(r.isConfirmed) call('generateBulkKupon', $('#q-qty').val(), $('#q-jenis').val(), $('#q-lok').val()).then(() => loadCRUD('Data_Kupon')); });
     }
