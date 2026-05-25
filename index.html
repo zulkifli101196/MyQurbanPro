@@ -15,419 +15,385 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    :root { --main-blue: #2563eb; --dark-blue: #1e3a8a; --soft-blue: #eff6ff; --bg-gray: #f8fafc; --sidebar-w: 280px; }
-    body { background: var(--bg-gray); font-family: 'Plus Jakarta Sans', sans-serif; color: #334155; overflow-x: hidden; }
-    #sidebar { width: var(--sidebar-w); height: 100vh; position: fixed; background: #fff; border-right: 1px solid #e2e8f0; transition: 0.3s; z-index: 1060; }
-    #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1050; backdrop-filter: blur(4px); }
-    #sidebar-overlay.active { display: block; }
-    #content { margin-left: var(--sidebar-w); transition: 0.3s; min-height: 100vh; }
-    .nav-link { color: #64748b; padding: 12px 20px; border-radius: 12px; margin: 4px 18px; border: none; background: none; width: calc(100% - 36px); text-align: left; cursor: pointer; transition: 0.2s; font-weight: 500; display: flex; align-items: center; }
-    .nav-link i { width: 30px; font-size: 1.1rem; }
-    .nav-link:hover { background: var(--soft-blue); color: var(--main-blue); }
-    .nav-link.active { background: var(--main-blue); color: white; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
-    .stat-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; transition: 0.3s; }
-    .icon-shape { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; margin-bottom: 15px; font-size: 1.25rem; }
-    .card-welcome { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); border-radius: 24px; color: white; border: none; }
-    .quote-box { background: #1e293b; color: white; border-radius: 20px; padding: 25px; position: relative; overflow: hidden; }
-    .quote-box i { position: absolute; opacity: 0.1; font-size: 4rem; top: 10px; left: 10px; }
-    #login-page { position: fixed; inset: 0; z-index: 9999; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
-    .table-container { background: white; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; }
-    table.dataTable { width: 100% !important; margin: 15px 0 !important; border-collapse: collapse !important; }
-    table.dataTable thead th { background: #f8fafc; color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; padding: 15px !important; border-bottom: 1px solid #e2e8f0 !important; white-space: nowrap; }
-    table.dataTable tbody td { padding: 12px 15px !important; vertical-align: middle; border-bottom: 1px solid #f1f5f9 !important; white-space: nowrap; font-size: 13.5px; }
-    #reader { border-radius: 15px; overflow: hidden; background: #000; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    @media print { 
-      body * { visibility: hidden; } 
-      #print-area, #print-area * { visibility: visible; } 
-      #print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white !important; } 
-      .print-grid { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; margin: 0; } 
-      @page { margin: 0.5cm; size: auto; } 
-      .no-print { display: none !important; } 
-      .kupon-card { break-inside: avoid; page-break-inside: avoid; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: none !important; border: 1px solid #eee !important; width: 100% !important; margin: 0 !important; } 
-    }
-    @media (max-width: 992px) { #sidebar { margin-left: calc(-1 * var(--sidebar-w)); } #sidebar.mobile-show { margin-left: 0; } #content { margin-left: 0 !important; } }
-  </style>
-</head>
-<body>
-  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-  <div id="login-page" style="display:none;">
-    <div class="card p-4 border-0 shadow-lg" style="width: 380px; border-radius: 28px;">
-      <div class="text-center mb-4">
-        <div class="d-inline-block p-3 rounded-circle mb-3" style="background: var(--soft-blue);"><i class="fas fa-mosque fa-4x" style="color: var(--main-blue);"></i></div>
-        <h4 class="fw-bold">MyQurban <span style="color:var(--main-blue)">PRO</span></h4>
-        <p class="text-muted small">Silahkan masukan Username & Password anda</p>
-      </div>
-      <input type="text" id="l-user" class="form-control mb-3" placeholder="Username">
-      <input type="password" id="l-pass" class="form-control mb-4" placeholder="Password">
-      <button class="btn btn-primary w-100 py-3 shadow-sm rounded-3" onclick="doLogin()">Masuk</button>
-      <h4 class="text-muted small text-center mt-3">Zulkifli Mandjurungi &copy; 2026</h4>
-    </div>
-  </div>
-
-  <div id="sidebar" class="no-print">
-    <div class="p-4 border-bottom mb-3">
-      <div class="d-flex align-items-center gap-2">
-        <div class="p-2 rounded-3 bg-primary text-white"><i class="fas fa-mosque"></i></div>
-        <h5 class="fw-bold m-0">MyQurban Pro</h5>
-      </div>
-      <div class="mt-3 py-1 px-3 rounded-pill d-inline-block small fw-bold" style="background: var(--soft-blue); color: var(--main-blue);" id="role-label">-</div>
-    </div>
-    <div class="nav flex-column">
-      <button class="nav-link active" onclick="nav('dash', this)"><i class="fas fa-home"></i> Dashboard</button>
-      <div class="admin-only">
-        <button class="nav-link" onclick="$('#sub-master').slideToggle()"><i class="fas fa-layer-group"></i> Master Data <i class="fas fa-chevron-down ms-auto small"></i></button>
-        <div id="sub-master" style="display:none; margin-left: 20px;">
-          <button class="nav-link small py-2" onclick="loadCRUD('Data_Kelompok')">Data Kelompok</button>
-          <button class="nav-link small py-2" onclick="loadCRUD('Data_Anggota')">Data Anggota</button>
-          <button class="nav-link small py-2" onclick="loadCRUD('Data_Panitia')">Data Panitia</button>
-          <button class="nav-link small py-2" onclick="loadCRUD('Data_Hewan')">Data Hewan</button>
-          <button class="nav-link small py-2" onclick="loadCRUD('Data_User')">Data User</button>
-          <button class="nav-link small py-2" onclick="loadCRUD('Data_Keuangan')">Data Keuangan</button>
-          <button class="nav-link small py-2" onclick="loadCRUD('Data_Log')">Data Log</button>
-        </div>
-        <button class="nav-link" onclick="loadCRUD('Data_Kupon')"><i class="fas fa-ticket-alt"></i> Kupon Digital</button>
-      </div>
-      <button class="nav-link" onclick="nav('scan', this)"><i class="fas fa-qrcode"></i> Scan QrCode</button>
-      <button class="nav-link" onclick="nav('profile', this)"><i class="fas fa-user-circle"></i> Profile</button>
-      <hr class="mx-4 opacity-10">
-      <button class="nav-link text-danger" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Keluar</button>
-    </div>
-  </div>
-
-  <div id="content">
-    <nav class="navbar navbar-light px-4 py-3 sticky-top no-print">
-      <button class="btn btn-white border shadow-sm rounded-circle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-      <div class="ms-auto d-flex align-items-center">
-        <div class="text-end me-3 d-none d-sm-block">
-          <div class="fw-bold small" id="display-nama">User</div>
-          <div class="text-muted small" id="display-role">Role</div>
-        </div>
-        <div class="rounded-circle bg-light border p-1 text-primary"><i class="fas fa-user-circle fa-xl"></i></div>
-      </div>
-    </nav>
-
-    <div class="p-4">
-      <div id="tab-dash" class="tab-content no-print">
-        <div class="card card-welcome p-4 mb-4 shadow-sm">
-          <h4 class="fw-bold mb-1">Assalamu'alaikum, <span id="welcome-user">Admin</span></h4>
-          <p class="mb-0 opacity-75 small">System Management Qurban Digital</p>
-        </div>
-        <div class="row g-3 mb-4">
-          <div class="col-6 col-lg-3"><div class="stat-card text-center border-bottom border-primary border-5"><div class="mx-auto icon-shape bg-primary text-white"><i class="fas fa-users-rectangle"></i></div><small class="text-muted fw-bold">KELOMPOK</small><h3 id="st-kelompok" class="fw-bold m-0">0</h3></div></div>
-          <div class="col-6 col-lg-3"><div class="stat-card text-center border-bottom border-success border-5"><div class="mx-auto icon-shape bg-success text-white"><i class="fas fa-user-check"></i></div><small class="text-muted fw-bold">ANGGOTA</small><h3 id="st-anggota" class="fw-bold m-0">0</h3></div></div>
-          <div class="col-6 col-lg-3"><div class="stat-card text-center border-bottom border-info border-5"><div class="mx-auto icon-shape bg-info text-white"><i class="fas fa-user-shield"></i></div><small class="text-muted fw-bold">PANITIA</small><h3 id="st-panitia" class="fw-bold m-0">0</h3></div></div>
-          <div class="col-6 col-lg-3"><div class="stat-card text-center border-bottom border-warning border-5"><div class="mx-auto icon-shape bg-warning text-white"><i class="fas fa-cow"></i></div><small class="text-muted fw-bold">HEWAN</small><h3 id="st-hewan" class="fw-bold m-0">0</h3></div></div>
-        </div>
-        <div class="row g-4 mb-4">
-          <div class="col-lg-4">
-            <div class="stat-card h-100 d-flex flex-column justify-content-between">
-              <div>
-                <h6 class="fw-bold text-muted mb-3">Ringkasan Data Keuangan</h6>
-                <div class="mb-3"><label class="small text-muted d-block">Total Pemasukan</label><h4 class="fw-bold text-success" id="txt-masuk">Rp 0</h4></div>
-                <div class="mb-3"><label class="small text-muted d-block">Total Pengeluaran</label><h4 class="fw-bold text-danger" id="txt-keluar">Rp 0</h4></div>
-              </div>
-              <div class="p-3 rounded-3 bg-light border-start border-primary border-4"><label class="small fw-bold text-primary d-block">Saldo Saat Ini</label><h3 class="fw-bold m-0" id="txt-saldo">Rp 0</h3></div>
-            </div>
-          </div>
-          <div class="col-lg-8">
-            <div class="stat-card h-100">
-              <div class="d-flex justify-content-between align-items-center mb-4"><h6 class="fw-bold m-0">Realtime Statistik Data Keuangan</h6><span class="badge bg-soft-blue text-primary px-3 py-2 rounded-pill">Data Aktual</span></div>
-              <div style="height: 280px;"><canvas id="financeChart"></canvas></div>
-            </div>
-          </div>
-        </div>
-        <div class="row g-4">
-          <div class="col-12"><div class="quote-box shadow-sm"><i class="fas fa-quote-left"></i><h6 class="fw-bold mb-2">Pesan Hikmah</h6><p id="daily-quote" class="small italic mb-0">"Berkurban adalah bukti cinta kita kepada sang Khalik."</p></div></div>
-        </div>
-      </div>
-
-      <div id="tab-crud" class="tab-content d-none no-print">
-        <div class="table-container shadow-sm border-0">
-          <div class="d-flex justify-content-between mb-4 align-items-center flex-wrap gap-2">
-            <h5 id="crud-title" class="fw-bold m-0 text-primary">DATA</h5>
-            <div class="d-flex gap-2">
-                <div id="general-tools" class="d-flex gap-2">
-                   <button class="btn btn-outline-success btn-sm" onclick="exportXLSX()"><i class="fas fa-file-excel"></i> XLSX</button>
-                   <button class="btn btn-outline-danger btn-sm" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-                </div>
-                <div id="kupon-tools" class="d-none d-flex gap-2">
-                   <button class="btn btn-outline-primary btn-sm" onclick="bulkKupon()"><i class="fas fa-magic"></i> Generate</button>
-                   <button class="btn btn-dark btn-sm" onclick="window.print()"><i class="fas fa-print"></i> Cetak Semua</button>
-                </div>
-                <button class="btn btn-primary btn-sm px-4" id="btn-add" onclick="openForm()"><i class="fas fa-plus me-2"></i>Tambah</button>
-            </div>
-          </div>
-          <div class="w-100"><table id="mainTable" class="table table-hover w-100"></table></div>
-        </div>
-      </div>
-
-      <div id="tab-scan" class="tab-content d-none no-print">
-        <div class="row justify-content-center">
-          <div class="col-md-6">
-            <div class="card p-4 border-0 shadow-sm" style="border-radius: 24px;">
-              <h5 class="fw-bold mb-4 text-center">Validasi QR Kupon Live</h5>
-              <div id="reader" style="width: 100%; display:none;"></div>
-              <div id="scan-placeholder" class="py-5 bg-light rounded-4 mb-4 border border-dashed text-center">
-                <i class="fas fa-qrcode fa-3x text-primary opacity-25"></i>
-                <p class="text-muted small mt-2">Kamera Belum Aktif</p>
-              </div>
-              <div id="scan-status" class="text-center mb-3 badge bg-light text-muted p-2 w-100 rounded-pill">Siap melakukan scan</div>
-              <div class="d-grid gap-2">
-                <button id="btn-start-scan" class="btn btn-primary py-3 shadow" onclick="startScanner()"><i class="fas fa-camera me-2"></i>Aktifkan Kamera Live</button>
-                <button id="btn-stop-scan" class="btn btn-outline-danger py-2 d-none" onclick="stopScanner()">Hentikan Kamera</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="tab-profile" class="tab-content d-none no-print">
-        <div class="row justify-content-center">
-          <div class="col-md-6 col-lg-5">
-            <div class="card p-4 border-0 shadow-sm mb-4" style="border-radius: 24px;">
-              <div class="d-flex align-items-center gap-3 mb-4">
-                <div class="p-3 bg-primary text-white rounded-circle"><i class="fas fa-user-check fa-lg"></i></div>
-                <div><h5 class="fw-bold m-0">Detail Akun</h5><p class="text-muted small m-0">Informasi profil anda saat ini</p></div>
-              </div>
-              <div class="list-group list-group-flush small">
-                <div class="list-group-item d-flex justify-content-between px-0 py-3"><span class="text-muted">Username</span><span class="fw-bold text-dark" id="det-user">-</span></div>
-                <div class="list-group-item d-flex justify-content-between px-0 py-3"><span class="text-muted">Nama Lengkap</span><span class="fw-bold text-dark" id="det-nama">-</span></div>
-                <div class="list-group-item d-flex justify-content-between px-0 py-3"><span class="text-muted">Hak Akses</span><span class="badge bg-soft-blue text-primary px-3 py-2 rounded-pill" id="det-role">-</span></div>
-                <div class="list-group-item d-flex justify-content-between px-0 py-3"><span class="text-muted">ID System</span><span class="text-muted font-monospace" id="det-id">-</span></div>
-              </div>
-            </div>
-            <div class="card p-4 border-0 shadow-sm" style="border-radius: 24px;">
-              <h6 class="fw-bold mb-3"><i class="fas fa-lock me-2 text-warning"></i>Ganti Keamanan</h6>
-              <div class="form-group mb-3"><label class="small fw-bold mb-1">Password Baru</label><input type="password" id="new-pass" class="form-control py-2" placeholder="Masukkan password baru"></div>
-              <button class="btn btn-primary w-100 py-3 shadow-sm rounded-3" onclick="updatePass()"><i class="fas fa-save me-2"></i>Update Password</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="print-area" class="d-none"></div>
-    </div>
-  </div>
-
-  <div class="modal fade no-print" id="modalForm" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content border-0 rounded-4">
-        <div class="modal-header bg-light border-0"><h6 class="modal-title fw-bold">Detail Data</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body p-4" id="form-body"></div>
-        <div class="modal-footer bg-light border-0"><button class="btn btn-primary w-100 py-3" onclick="saveData()">Simpan Data</button></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="modalQR" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 350px;">
-      <div class="modal-content text-center p-3 border-0 rounded-4">
-        <div id="qr-preview-content"></div>
-        <button class="btn btn-dark mt-3 w-100 py-2 rounded-pill" onclick="printSingleKupon()"><i class="fas fa-print me-2"></i>Cetak Sekarang</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
+  <style>
+    :root { --primary: #0f172a; --accent: #10b981; --bg: #f8fafc; }
+    body { background: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; background: var(--primary); position: fixed; color: #fff; z-index: 1000; transition: all 0.3s; }
+    .sidebar .nav-link { color: #94a3b8; padding: 12px 20px; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.05); border-left-color: var(--accent); }
+    .main-content { margin-left: 260px; padding: 30px; min-height: 100vh; transition: all 0.3s; }
+    .card-stat { border: none; border-radius: 16px; background: #fff; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .login-container { max-width: 420px; margin: 100px auto; background: #fff; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+    @media(max-width: 991px) { .sidebar { margin-left: -260px; } .sidebar.active { margin-left: 0; } .main-content { margin-left: 0; } .main-content.active { margin-left: 260px; } }
+    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+  </style>
+</head>
+<body>
+
+  <div id="loading" class="loading-overlay d-none">
+    <div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading...</span></div>
+  </div>
+
+  <div id="login-page" class="container">
+    <div class="login-container text-center">
+      <i class="fa-solid class fa-cow text-success fa-3x mb-3"></i>
+      <h3 class="fw-bold mb-1">MyQurban PRO</h3>
+      <p class="text-muted mb-4">Sistem Manajemen Qurban Modern</p>
+      <form id="form-login">
+        <div class="mb-3 text-start"><label class="form-label text-secondary small fw-bold">Username</label><input type="text" id="username" class="form-control form-control-lg" required></div>
+        <div class="mb-4 text-start"><label class="form-label text-secondary small fw-bold">Password</label><input type="password" id="password" class="form-control form-control-lg" required></div>
+        <button type="submit" class="btn btn-success btn-lg w-100 rounded-3">Masuk Aplikasi</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-page" class="d-none">
+    <aside class="sidebar d-flex flex-column justify-content-between pb-3">
+      <div>
+        <div class="p-4 d-flex align-items-center gap-3 border-bottom border-secondary border-opacity-25">
+          <i class="fa-solid fa-layer-group text-success fa-lg"></i>
+          <div><h6 class="mb-0 fw-bold text-white">MyQurban PRO</h6><span class="text-muted small" id="user-role">Role</span></div>
+        </div>
+        <nav class="nav flex-column mt-3">
+          <a class="nav-link active" href="#" data-target="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+          <a class="nav-link sec-admin" href="#" data-target="Data_User"><i class="fa-solid fa-users-gear"></i> Kelola User</a>
+          <a class="nav-link" href="#" data-target="Data_Kelompok"><i class="fa-solid fa-folder-open"></i> Data Kelompok</a>
+          <a class="nav-link" href="#" data-target="Data_Anggota"><i class="fa-solid fa-address-book"></i> Data Anggota</a>
+          <a class="nav-link" href="#" data-target="Data_Hewan"><i class="fa-solid fa-cow"></i> Hewan Qurban</a>
+          <a class="nav-link" href="#" data-target="Data_Panitia"><i class="fa-solid fa-user-tie"></i> Panitia</a>
+          <a class="nav-link" href="#" data-target="Data_Kupon"><i class="fa-solid fa-ticket"></i> Manajemen Kupon</a>
+          <a class="nav-link" href="#" data-target="Data_Keuangan"><i class="fa-solid fa-wallet"></i> Kas & Keuangan</a>
+          <a class="nav-link" href="#" data-target="scanner"><i class="fa-solid fa-qrcode"></i> Scan Kupon Daging</a>
+          <a class="nav-link sec-admin" href="#" data-target="Data_Log"><i class="fa-solid fa-clock-rotate-left"></i> Log Aktivitas</a>
+        </nav>
+      </div>
+      <div class="px-3">
+        <button class="btn btn-outline-danger w-100 border-0 text-start d-flex align-items-center gap-2" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar Sistem</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <button class="btn btn-light d-lg-none" onclick="$('.sidebar').toggleClass('active')"><i class="fa-solid fa-bars"></i></button>
+        <h4 class="fw-bold text-dark m-0" id="page-title">Dashboard Overview</h4>
+        <div class="dropdown">
+          <button class="btn btn-white border rounded-pill dropdown-toggle px-3" data-bs-toggle="dropdown"><i class="fa-regular fa-user text-muted me-2"></i><span id="user-display">Nama</span></button>
+          <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+            <li><a class="dropdown-menu-item dropdown-item" href="#" onclick="openChangePassword()"><i class="fa-solid fa-key me-2 text-muted"></i> Ganti Password</a></li>
+          </ul>
+        </div>
+      </header>
+
+      <section id="v-dashboard" class="view-section">
+        <div class="row g-4 mb-4">
+          <div class="col-6 col-lg-3"><div class="card-stat"><h6>Kelompok</h6><h2 class="fw-bold text-primary m-0" id="st-kelompok">0</h2></div></div>
+          <div class="col-6 col-lg-3"><div class="card-stat"><h6>Anggota Pekurban</h6><h2 class="fw-bold text-success m-0" id="st-anggota">0</h2></div></div>
+          <div class="col-6 col-lg-3"><div class="card-stat"><h6>Panitia Aktif</h6><h2 class="fw-bold text-warning m-0" id="st-panitia">0</h2></div></div>
+          <div class="col-6 col-lg-3"><div class="card-stat"><h6>Hewan Qurban</h6><h2 class="fw-bold text-info m-0" id="st-hewan">0</h2></div></div>
+        </div>
+        <div class="row g-4">
+          <div class="col-lg-4">
+            <div class="card card-stat h-100 border-0">
+              <h6 class="text-muted">Total Dana Pemasukan</h6><h3 class="text-success fw-bold" id="txt-masuk">Rp 0</h3><hr>
+              <h6 class="text-muted">Total Pengeluaran Kas</h6><h3 class="text-danger fw-bold" id="txt-keluar">Rp 0</h3><hr>
+              <h6 class="text-muted">Sisa Saldo Kas Kas Sekarang</h6><h3 class="text-primary fw-bold" id="txt-saldo">Rp 0</h3>
+            </div>
+          </div>
+          <div class="col-lg-8"><div class="card card-stat h-100 border-0"><h6>Grafik Rasio Keuangan</h6><div style="position:relative; height:240px;"><canvas id="financeChart"></canvas></div></div></div>
+        </div>
+      </section>
+
+      <section id="v-scanner" class="view-section d-none">
+        <div class="row justify-content-center">
+          <div class="col-md-6 text-center">
+            <div class="card card-stat border-0 mb-4">
+              <h6>Arahkan Kamera ke QR Code Kupon</h6>
+              <div id="reader" style="width:100%; border-radius:12px; overflow:hidden; background:#000;" class="my-3"></div>
+              <button class="btn btn-secondary mt-2" onclick="stopScanner()">Matikan Kamera</button>
+            </div>
+            <div class="card card-stat border-0">
+              <h6>Input Kode Kupon Manual</h6>
+              <div class="input-group mt-2">
+                <input type="text" id="manual-code" class="form-control" placeholder="Contoh: Q-X5A1B2">
+                <button class="btn btn-success px-4" onclick="verifyKupon($('#manual-code').val())">Proses</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="v-crud" class="view-section d-none">
+        <div class="card card-stat border-0 shadow-sm">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <div id="crud-actions"><button class="btn btn-success px-4 shadow-sm" onclick="openForm()"><i class="fa-solid fa-plus me-2"></i> Tambah Baru</button></div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary" onclick="exportExcel()"><i class="fa-regular fa-file-excel me-2"></i> Excel</button>
+              <button class="btn btn-outline-secondary" onclick="exportPDF()"><i class="fa-regular fa-file-pdf me-2"></i> PDF</button>
+            </div>
+          </div>
+          <div class="table-responsive"><table id="main-table" class="table table-striped table-hover w-100 align-middle"></table></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal fade" id="crud-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header border-0"><h5 class="modal-title fw-bold" id="modal-title">Form Input</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form id="dynamic-form"><div class="modal-body row g-3" id="form-fields"></div><div class="modal-footer border-0"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-success px-4">Simpan Data</button></div></form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // === GANTI DENGAN URL WEB APP GOOGLE ANDA ===
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzTgQaapaxoSGZgSQKtnlGI-mhHrwP6KxO4slzWMN4i5NzXT2c3ywCksxpbE6SObqXWRg/exec";
+    // MASUKKAN URL DEPLOYMENT GOOGLE APPS SCRIPT WEB APP ANDA DI SINI //
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzT6f-vlIUrtbXv-eadxKZ5t57s1BbyUS5hTtKyKiXiKVXAZiBtIZGcJ0jQXA4EDhww-w/exec"; 
 
-    let SESSION = {}; let REFS = {}; let CUR_SHEET = ""; let CUR_ID = null; let dTable = null; let RAW_DATA = [];
-    let html5QrCode;
-    const bsModal = new bootstrap.Modal(document.getElementById('modalForm'));
-    const bsModalQR = new bootstrap.Modal(document.getElementById('modalQR'));
+    let curSheet = "dashboard", tableInstance = null, refsData = {}, currentUserId = null, html5QrcodeScanner = null;
 
-    const call = (f, ...a) => {
-      Swal.fire({ title: 'Proses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      return fetch(GAS_URL, {
-        method: "POST",
-        mode: "cors",
-        body: JSON.stringify({ function: f, args: a })
-      })
-      .then(res => res.json())
-      .then(d => { Swal.close(); return d; })
-      .catch(e => { Swal.fire('Error', 'Koneksi Backend Gagal: ' + e.toString(), 'error'); });
-    };
-
-    window.onload = function() {
-      const saved = localStorage.getItem('qurban_2026_session');
-      if(saved) { SESSION = JSON.parse(saved); applyLoginUI(SESSION); } else { $('#login-page').show(); }
-    };
-
-    function startScanner() {
-      $('#reader').show(); $('#scan-placeholder').hide();
-      $('#btn-start-scan').addClass('d-none'); $('#btn-stop-scan').removeClass('d-none');
-      $('#scan-status').text("Mencari QR Code...").removeClass('text-muted').addClass('text-primary');
-
-      html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (t) => { handleScanSuccess(t); })
-      .catch(err => { Swal.fire('Error', 'Kamera Diblokir: ' + err, 'error'); stopScanner(); });
-    }
-
-    function stopScanner() {
-      if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => {
-          $('#reader').hide(); $('#scan-placeholder').show();
-          $('#btn-start-scan').removeClass('d-none'); $('#btn-stop-scan').addClass('d-none');
-          $('#scan-status').text("Kamera Dimatikan").addClass('text-muted');
-        });
+    async function call(f, ...args) {
+      $('#loading').removeClass('d-none');
+      try {
+        const r = await fetch(GAS_URL, { method: 'POST', mode: 'cors', body: JSON.stringify({ function: f, args: args }) });
+        const res = await r.json();
+        $('#loading').addClass('d-none');
+        return res;
+      } catch (e) {
+        $('#loading').addClass('d-none');
+        Swal.fire('Koneksi Gagal', 'Sistem tidak dapat merespons request.', 'error');
+        return null;
       }
     }
 
-    async function handleScanSuccess(kode) {
-      if (html5QrCode && html5QrCode.isScanning) await html5QrCode.stop();
-      $('#scan-status').text("Memverifikasi: " + kode).addClass('text-warning');
-      const res = await call('processScan', kode);
-      Swal.fire({ icon: res.s, title: res.s.toUpperCase(), text: res.m, confirmButtonText: 'Lanjut' }).then(() => { startScanner(); });
+    $(document).ready(async () => {
+      $('#form-login').on('submit', async (e) => {
+        e.preventDefault();
+        const res = await call('loginUser', $('#username').val(), $('#password').val());
+        if (res && res.success) {
+          currentUserId = res.id;
+          $('#user-role').text(res.role);
+          $('#user-display').text(res.nama);
+          if(res.role !== 'Admin') $('.sec-admin').remove();
+          $('#login-page').addClass('d-none');
+          $('#app-page').removeClass('d-none');
+          refsData = await call('getRefs') || {};
+          loadView('dashboard');
+        } else {
+          Swal.fire('Gagal Masuk', res ? res.msg : 'Periksa jaringan internet', 'error');
+        }
+      });
+
+      $('.sidebar .nav-link').click(function(e) {
+        e.preventDefault();
+        $('.sidebar .nav-link').removeClass('active');
+        $(this).addClass('active');
+        if($(window).width() < 992) $('.sidebar').removeClass('active');
+        loadView($(this).data('target'));
+      });
+    });
+
+    async function loadView(t) {
+      curSheet = t;
+      $('.view-section').addClass('d-none');
+      stopScanner();
+      
+      const titleMapping = {
+        'dashboard': 'Dashboard Overview', 'scanner': 'Scan QR Code Kupon Daging',
+        'Data_User': 'Manajemen Pengguna', 'Data_Kelompok': 'Kelompok Qurban',
+        'Data_Anggota': 'Anggota Pekurban', 'Data_Hewan': 'Data Hewan Qurban',
+        'Data_Panitia': 'Struktur Kepanitiaan', 'Data_Kupon': 'Distribusi Kupon Daging',
+        'Data_Keuangan': 'Kas / Arus Keuangan', 'Data_Log': 'Log Audit Aktivitas'
+      };
+      $('#page-title').text(titleMapping[t] || 'Data Master');
+
+      if (t === 'dashboard') {
+        $('#v-dashboard').removeClass('d-none');
+        loadStats();
+      } else if (t === 'scanner') {
+        $('#v-scanner').removeClass('d-none');
+        startScanner();
+      } else {
+        $('#v-crud').removeClass('d-none');
+        loadCRUD(t);
+      }
     }
 
-    function doLogin() {
-      const u = $('#l-user').val(), p = $('#l-pass').val();
-      if (!u || !p) return Swal.fire('Peringatan', 'Isi data!', 'warning');
-      call('loginUser', u, p).then(res => {
-        if (res && res.success) { SESSION = res; localStorage.setItem('qurban_2026_session', JSON.stringify(res)); applyLoginUI(res); }
-        else { Swal.fire('Gagal', res.msg, 'error'); }
+    async function loadCRUD(sheet) {
+      if (tableInstance) { tableInstance.destroy(); $('#main-table').empty(); tableInstance = null; }
+      
+      $('#crud-actions').html(`<button class="btn btn-success px-4 shadow-sm" onclick="openForm()"><i class="fa-solid fa-plus me-2"></i> Tambah Data Baru</button>`);
+      if(sheet === 'Data_Kupon') {
+        $('#crud-actions').append(`<button class="btn btn-warning px-4 shadow-sm ms-2" onclick="openBulkKuponModal()"><i class="fa-solid fa-ticket me-2"></i> Buat Kupon Massal</button>`);
+      }
+
+      const res = await call('manageData', 'read', sheet);
+      if (!res || !res.header) return;
+
+      const cols = res.header.map(h => {
+        if (h === "QRCode_Kupon") return { title: h, render: (d) => d ? `<img src="https://api.quickchart.io/qr?text=${encodeURIComponent(d)}&size=60" width="60" style="cursor:zoom-in;" onclick="zoomQR('${d}')">` : '-' };
+        return { title: h };
+      });
+      cols.push({ title: "Aksi/Tindakan", orderable: false, render: (d, ty, row) => `<button class="btn btn-sm btn-light text-primary me-1" onclick="openForm(${row[0]})"><i class="fa-regular fa-pen-to-square"></i></button><button class="btn btn-sm btn-light text-danger" onclick="deleteData(${row[0]})"><i class="fa-regular fa-trash-can"></i></button>` });
+
+      tableInstance = $('#main-table').DataTable({ data: res.values, columns: cols, responsive: true, pageLength: 10, destroy: true });
+    }
+
+    function openForm(id = null) {
+      const h = tableInstance.settings()[0].aoColumns.map(c => c.sTitle);
+      $('#form-fields').empty();
+      $('#modal-title').text(id ? 'Ubah Data #' + id : 'Tambah Data Baru');
+      
+      let rowData = id ? tableInstance.rows().data().toArray().find(r => r[0] == id) : null;
+
+      h.forEach((col, idx) => {
+        if (["No", "Timestamp", "Aksi/Tindakan", "QRCode_Kupon"].includes(col)) return;
+        
+        let val = rowData ? rowData[idx] : "";
+        let inputHtml = `<div class="col-md-6 mb-2"><label class="form-label small fw-bold">${col}</label>`;
+        
+        if (refsData[col]) {
+          inputHtml += `<select class="form-select" name="${col}" required><option value="">-- Pilih ${col} --</option>`;
+          refsData[col].forEach(opt => {
+            inputHtml += `<option value="${opt}" ${opt == val ? 'selected' : ''}>${opt}</option>`;
+          });
+          inputHtml += `</select>`;
+        } else {
+          let type = col.includes("Total") || col.includes("Jumlah") || col.includes("Bobot") ? "number" : "text";
+          inputHtml += `<input type="${type}" class="form-control" name="${col}" value="${val}" required>`;
+        }
+        inputHtml += `</div>`;
+        $('#form-fields').append(inputHtml);
+      });
+
+      $('#dynamic-form').off('submit').on('submit', async (e) => {
+        e.preventDefault();
+        const obj = {};
+        $('#dynamic-form').serializeArray().forEach(item => obj[item.name] = item.value);
+        const res = await call('manageData', 'save', curSheet, obj, id);
+        if (res && !res.includes("Error")) {
+          bootstrap.Modal.getInstance($('#crud-modal')).hide();
+          Swal.fire('Berhasil', res, 'success');
+          loadCRUD(curSheet);
+        } else {
+          Swal.fire('Gagal Menyimpan', res || 'Terjadi kesalahan sistem', 'error');
+        }
+      });
+
+      new bootstrap.Modal($('#crud-modal')).show();
+    }
+
+    function deleteData(id) {
+      Swal.fire({ title: 'Apakah Anda Yakin?', text: "Data ID " + id + " akan dihapus permanen dari cloud database!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya, Hapus Data' }).then(async (r) => {
+        if (r.isConfirmed) {
+          const res = await call('manageData', 'delete', curSheet, {}, id);
+          Swal.fire('Selesai', res, 'info');
+          loadCRUD(curSheet);
+        }
       });
     }
 
-    function applyLoginUI(res) {
-      $('#login-page').fadeOut();
-      $('#display-nama, #welcome-user, #det-nama').text(res.nama);
-      $('#display-role, #role-label, #det-role').text(res.role);
-      $('#det-user').text(res.user); $('#det-id').text(res.id || '-');
-      if(res.role !== 'Admin') $('.admin-only').hide(); else $('.admin-only').show();
-      loadStats(); loadRefs(); nav('dash');
+    function startScanner() {
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => { verifyKupon(text); }, () => {});
     }
 
-    function doLogout() { stopScanner(); localStorage.removeItem('qurban_2026_session'); location.reload(); }
-
-    function nav(id, el) {
-      if (id !== 'scan') stopScanner();
-      $('.tab-content').addClass('d-none');
-      $('#tab-' + (['scan', 'profile', 'dash'].includes(id) ? id : 'crud')).removeClass('d-none');
-      $('.nav-link').removeClass('active');
-      if(el) $(el).addClass('active');
-      if(window.innerWidth < 992) { $('#sidebar').removeClass('mobile-show'); $('#sidebar-overlay').removeClass('active'); }
-      if(id === 'dash') loadStats();
+    function stopScanner() {
+      if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+        html5QrcodeScanner.stop().then(() => html5QrcodeScanner = null);
+      }
     }
 
-    async function loadCRUD(sh) {
-      CUR_SHEET = sh; $('#crud-title').text(sh.replace('Data_', '').replace('_', ' ')); nav('crud');
-      $('#kupon-tools').toggleClass('d-none', sh !== 'Data_Kupon');
-      const res = await call('manageData', "read", sh);
-      RAW_DATA = res; 
-      if(dTable) dTable.destroy(); $('#mainTable').empty();
-      let h = '<thead><tr>' + res.header.map(x => `<th>${x}</th>`).join('') + '<th>Aksi</th></tr></thead>';
-      let b = '<tbody>' + res.values.map(row => {
-        let aksi = `<div class="d-flex">
-          ${sh === 'Data_Kupon' ? `<button class="btn btn-sm btn-light border me-1" onclick='previewKupon(${JSON.stringify(row)})'><i class="fas fa-qrcode text-success"></i></button>` : ''}
-          <button class="btn btn-sm btn-light border me-1" onclick='openForm("${row[0]}", ${JSON.stringify(row)})'><i class="fas fa-pen text-primary"></i></button>
-          <button class="btn btn-sm btn-light border" onclick='delData("${row[0]}")'><i class="fas fa-trash text-danger"></i></button>
-        </div>`;
-        return `<tr>${row.map(c => `<td>${c}</td>`).join('')}<td>${aksi}</td></tr>`;
-      }).join('') + '</tbody>';
-      $('#mainTable').append(h + b);
-      dTable = $('#mainTable').DataTable({ scrollX: true, order: [[0, "desc"]] });
-      if(sh === 'Data_Kupon') preparePrint(res);
+    async function verifyKupon(code) {
+      if (!code) return;
+      stopScanner();
+      const res = await call('processScan', code);
+      if (res) {
+        Swal.fire({ title: res.s === 'success' ? 'VALID' : 'PERINGATAN/ERROR', text: res.m, icon: res.s }).then(() => { if (curSheet === 'scanner') startScanner(); });
+      }
     }
 
-    function generateKuponHTML(kode, jenis, lokasi) {
-      return `
-        <div class="kupon-card" style="width: 170px; background: white; border-radius: 12px; overflow: hidden; border: 2px solid #2563eb; text-align: center; position: relative; font-family: 'Plus Jakarta Sans', sans-serif;">
-          <div style="background: #2563eb; color: white; padding: 6px 5px; font-size: 9px; font-weight: 800; letter-spacing: 1px;">Kupon Daging Qurban</div>
-          <div style="padding: 12px 8px;">
-            <img src="https://quickchart.io/qr?text=${kode}&size=150&margin=1" style="width: 130px; height: 130px; margin-bottom: 8px; border: 1px solid #f1f5f9; padding: 5px; border-radius: 8px;">
-            <div style="font-weight: 900; font-size: 14px; color: #1e293b; margin-bottom: 2px;">${kode}</div>
-            <div style="font-size: 10px; color: #ffffff; background: #1e293b; display: inline-block; padding: 2px 12px; border-radius: 50px; margin-bottom: 6px; font-weight: 600;">${jenis}</div>
-            <div style="border-top: 1px dashed #e2e8f0; margin: 8px 5px 0 5px; padding-top: 6px;">
-               <div style="font-size: 8px; color: #64748b; font-weight: 700; text-transform: uppercase;">Lokasi Pengambilan</div>
-               <div style="font-size: 9px; color: #2563eb; font-weight: 800; line-height: 1.2;">${lokasi || '-'}</div>
-            </div>
-          </div>
-          <div style="background: #f8fafc; padding: 4px; font-size: 7px; color: #94a3b8; font-weight: 600;">Scan untuk Validasi</div>
-        </div>`;
-    }
+    function openBulkKuponModal() {
+      $('#form-fields').empty().append(`
+        <div class="col-md-4"><label class="form-label small fw-bold">Jumlah Kupon</label><input type="number" id="q-qty" class="form-control" required min="1" value="10"></div>
+        <div class="col-md-4"><label class="form-label small fw-bold">Jenis Kupon</label><select id="q-jenis" class="form-select"></select></div>
+        <div class="col-md-4"><label class="form-label small fw-bold">Lokasi Pengambilan</label><select id="q-lok" class="form-select"></select></div>
+      `);
+      
+      (refsData["Jenis_Kupon"] || []).forEach(opt => $('#q-jenis').append(`<option value="${opt}">${opt}</option>`));
+      (refsData["Lokasi_Pengambilan"] || []).forEach(opt => $('#q-lok').append(`<option value="${opt}">${opt}</option>`));
 
-    function previewKupon(row) {
-      const h = RAW_DATA.header;
-      const kIdx = h.indexOf('Kode_Kupon'), jIdx = h.indexOf('Jenis_Kupon'), lIdx = h.indexOf('Lokasi_Pengambilan');
-      $('#qr-preview-content').html(generateKuponHTML(row[kIdx], row[jIdx], row[lIdx]));
-      bsModalQR.show();
-    }
-
-    function printSingleKupon() { 
-      $('#print-area').html(`<div style="display:flex; justify-content:center; padding-top:50px;">${$('#qr-preview-content').html()}</div>`); 
-      window.print(); 
-    }
-
-    function preparePrint(res) {
-      let htm = '<div class="print-grid">';
-      const h = res.header;
-      const kIdx = h.indexOf('Kode_Kupon'), jIdx = h.indexOf('Jenis_Kupon'), lIdx = h.indexOf('Lokasi_Pengambilan');
-      res.values.forEach(row => { htm += generateKuponHTML(row[kIdx], row[jIdx], row[lIdx]); });
-      $('#print-area').html(htm + '</div>');
-    }
-
-    function exportXLSX() { const data = [RAW_DATA.header, ...RAW_DATA.values]; const ws = XLSX.utils.aoa_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, `Export_${CUR_SHEET}.xlsx`); }
-    function exportPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4'); doc.text("Laporan " + CUR_SHEET, 14, 10); doc.autoTable({ head: [RAW_DATA.header], body: RAW_DATA.values, startY: 15, theme: 'grid', styles: {fontSize: 8} }); doc.save(`Laporan_${CUR_SHEET}.pdf`); }
-
-    async function openForm(id = null, row = []) {
-      CUR_ID = id; let htm = '<div class="row">';
-      RAW_DATA.header.forEach((h, i) => {
-        if(["No", "Timestamp", "QRCode_Kupon"].includes(h)) return;
-        let val = id ? row[i] : "";
-        htm += `<div class="col-md-6 mb-3"><label class="small fw-bold mb-1">${h}</label>`;
-        if(REFS[h]) htm += `<select class="form-select" data-col="${h}">${REFS[h].map(o => `<option value="${o}" ${o==val?'selected':''}>${o}</option>`).join('')}</select>`;
-        else htm += `<input type="text" class="form-control" data-col="${h}" value="${val}">`;
-        htm += `</div>`;
+      $('#modal-title').text('Sistem Pembuatan Kupon Massal');
+      $('#dynamic-form').off('submit').on('submit', async (e) => {
+        e.preventDefault();
+        bootstrap.Modal.getInstance($('#crud-modal')).hide();
+        const res = await call('generateBulkKupon', $('#q-qty').val(), $('#q-jenis').val(), $('#q-lok').val());
+        Swal.fire('Hasil Pembuatan', res, 'success');
+        loadCRUD('Data_Kupon');
       });
-      $('#form-body').html(htm + '</div>'); bsModal.show();
-    }
-
-    function saveData() { const obj = {}; $('[data-col]').each(function() { obj[$(this).data('col')] = $(this).val(); }); call('manageData', "save", CUR_SHEET, obj, CUR_ID).then(() => { bsModal.hide(); loadCRUD(CUR_SHEET); loadStats(); }); }
-    function delData(id) { Swal.fire({title: 'Hapus?', icon: 'warning', showCancelButton: true}).then(r => { if(r.isConfirmed) call('manageData', "delete", CUR_SHEET, null, id).then(() => { loadCRUD(CUR_SHEET); loadStats(); }); }); }
-
-    function bulkKupon() {
-      Swal.fire({
-        title: 'Bulk Generate',
-        html: `<input id="q-qty" type="number" class="form-control mb-2" placeholder="Jumlah"><select id="q-jenis" class="form-select mb-2">${REFS['Jenis_Kupon']?REFS['Jenis_Kupon'].map(x=>`<option>${x}</option>`):'<option>Umum</option>'}</select><select id="q-lok" class="form-select">${REFS['Lokasi_Pengambilan']?REFS['Lokasi_Pengambilan'].map(x=>`<option>${x}</option>`):'<option>Masjid</option>'}</select>`,
-        showCancelButton: true
-      }).then(r => { if(r.isConfirmed) call('generateBulkKupon', $('#q-qty').val(), $('#q-jenis').val(), $('#q-lok').val()).then(() => loadCRUD('Data_Kupon')); });
+      new bootstrap.Modal($('#crud-modal')).show();
     }
 
     async function loadStats() {
       const s = await call('getDashboardData');
       if (s) {
-        $('#st-kelompok').text(s.kelompok);
-        $('#st-anggota').text(s.anggota);
-        $('#st-panitia').text(s.panitia);
-        $('#st-hewan').text(s.hewan);
-        $('#txt-masuk').text('Rp ' + s.masukStr);
-        $('#txt-keluar').text('Rp ' + s.keluarStr);
-        $('#txt-saldo').text('Rp ' + s.saldo);
+        $('#st-kelompok').text(s.kelompok); $('#st-anggota').text(s.anggota);
+        $('#st-panitia').text(s.panitia); $('#st-hewan').text(s.hewan);
+        $('#txt-masuk').text('Rp ' + s.masukStr); $('#txt-keluar').text('Rp ' + s.keluarStr); $('#txt-saldo').text('Rp ' + s.saldo);
         initChart(s.masuk, s.keluar);
       }
     }
 
     function initChart(m, k) {
-      const canvas = document.getElementById('financeChart');
-      if(!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if(window.myChart) window.myChart.destroy();
-      window.myChart = new Chart(ctx, { type: 'bar', data: { labels: ['Masuk', 'Keluar'], datasets: [{ data: [m, k], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+      const canvas = document.getElementById('financeChart'); if(!canvas) return;
+      const ctx = canvas.getContext('2d'); if(window.myChart) window.myChart.destroy();
+      window.myChart = new Chart(ctx, { type: 'bar', data: { labels: ['Pemasukan Kas', 'Pengeluaran Kas'], datasets: [{ data: [m, k], backgroundColor: ['#10b981', '#ef4444'], borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
     }
-    
-    async function loadRefs() { REFS = await call('getRefs'); }
-    function updatePass() { call('changePassword', SESSION.id, $('#new-pass').val()).then(msg => Swal.fire('Sukses', msg, 'success')); }
-    function toggleSidebar() { $('#sidebar').toggleClass('mobile-show'); $('#sidebar-overlay').toggleClass('active'); }
+
+    function openChangePassword() {
+      Swal.fire({ title: 'Ganti Kata Sandi Akun', input: 'password', inputLabel: 'Masukkan Password Baru Anda', inputPlaceholder: 'Ketik password baru...', showCancelButton: true }).then(async (r) => {
+        if(r.value) {
+          const res = await call('changePassword', currentUserId, r.value);
+          Swal.fire('Selesai', res, 'success');
+        }
+      });
+    }
+
+    function zoomQR(d) {
+      Swal.fire({ title: 'QR Code Kupon: ' + d, imageUrl: `https://api.quickchart.io/qr?text=${encodeURIComponent(d)}&size=300`, imageWidth: 300, imageHeight: 300 });
+    }
+
+    function exportExcel() {
+      if(!tableInstance) return;
+      const data = tableInstance.rows().data().toArray();
+      const headers = tableInstance.settings()[0].aoColumns.map(c => c.sTitle);
+      const wsData = [headers.slice(0, -1)].concat(data.map(row => row.slice(0, -1)));
+      const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, curSheet);
+      XLSX.writeFile(wb, `Laporan_${curSheet}.xlsx`);
+    }
+
+    function exportPDF() {
+      if(!tableInstance) return;
+      const { jsPDF } = window.jspdf; const doc = new jsPDF();
+      const headers = tableInstance.settings()[0].aoColumns.map(c => c.sTitle).slice(0, -1);
+      const data = tableInstance.rows().data().toArray().map(row => row.slice(0, -1));
+      doc.text(`Laporan Data Master: ${curSheet}`, 14, 15);
+      doc.autoTable({ head: [headers], body: data, startY: 22, theme: 'striped' });
+      doc.save(`Laporan_${curSheet}.pdf`);
+    }
+
+    function logout() {
+      currentUserId = null;
+      $('#app-page').addClass('d-none');
+      $('#login-page').removeClass('d-none');
+      $('#form-login')[0].reset();
+    }
   </script>
 </body>
 </html>
