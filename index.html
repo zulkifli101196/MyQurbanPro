@@ -68,7 +68,7 @@
     </div>
   </div>
 
-  <div id="sidebar" class="no-print">
+  <div id="sidebar" class="no-print" style="display:none;">
     <div class="p-4 border-bottom mb-3">
       <div class="d-flex align-items-center gap-2">
         <div class="p-2 rounded-3 bg-primary text-white"><i class="fas fa-mosque"></i></div>
@@ -98,7 +98,7 @@
     </div>
   </div>
 
-  <div id="content">
+  <div id="content" style="display:none;">
     <nav class="navbar navbar-light px-4 py-3 sticky-top no-print">
       <button class="btn btn-white border shadow-sm rounded-circle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
       <div class="ms-auto d-flex align-items-center">
@@ -300,6 +300,8 @@
 
     function applyLoginUI(res) {
       $('#login-page').fadeOut();
+      $('#sidebar').fadeIn();
+      $('#content').fadeIn();
       $('#display-nama, #welcome-user, #det-nama').text(res.nama);
       $('#display-role, #role-label, #det-role').text(res.role);
       $('#det-user').text(res.user); $('#det-id').text(res.id || '-');
